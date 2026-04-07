@@ -1,6 +1,13 @@
 pipeline {
     agent any
 
+    options {
+    timestamps()                        // add timestamps to logs
+    buildDiscarder(
+        logRotator(numToKeepStr: '3')  // keep only last 10 builds
+    )
+}
+
     environment {
         IMAGE_NAME = 'imrans10/my-jenkins-app'
         IMAGE_TAG  = "v${BUILD_NUMBER}"
