@@ -1,56 +1,38 @@
 pipeline {
     agent any
 
-    options {
-    timestamps()                        // add timestamps to logs
-    buildDiscarder(
-        logRotator(numToKeepStr: '3')  // keep only last 10 builds
-    )
-}
-
-    environment {
-        IMAGE_NAME = 'imrans10/my-jenkins-app'
-        IMAGE_TAG  = "v${BUILD_NUMBER}"
-    }
-
-    stages{
-        stage('Clone repo') {
-    steps {
-        withCredentials([string(credentialsId: 'github-token', variable: 'GH_TOKEN')]) {
-            bat 'if exist app rmdir /s /q app'
-            bat 'git clone https://%GH_TOKEN%@github.com/Imran-Yoriichi/jenkins-docker-demo app'
-        }
-    }
-}
-        
-
-        stage('Build Docker image') {
+    stages {
+        stage('Build') {
             steps {
-                script {
-                   bat "docker build -t %IMAGE_NAME%:%IMAGE_TAG% app"
-                }
+                bat 'echo Building on branch: %GIT_BRANCH%'
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Deploy to dev') {
+            when {
+                branch 'dev'
+            }
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
-                    bat "docker push %IMAGE_NAME%:%IMAGE_TAG%"
-                    bat "docker tag %IMAGE_NAME%:%IMAGE_TAG% %IMAGE_NAME%:latest"
-                    bat "docker push %IMAGE_NAME%:latest"
-                }
+                bat 'echo Deploying to STAGING environment...'
+            }
+        }
+
+        stage('Deploy to production') {
+            when {
+                branch 'main'
+            }
+            steps {
+                bat 'echo Deploying to PRODUCTION environment...'
             }
         }
     }
 
     post {
-        always {
-            bat "docker rmi %IMAGE_NAME%:%IMAGE_TAG% || exit 0"
+        success {
+            bat 'echo Pipeline succeeded on %GIT_BRANCH%'
+        }
+        failure {
+            bat 'echo Pipeline failed on %GIT_BRANCH%'
         }
     }
 }
