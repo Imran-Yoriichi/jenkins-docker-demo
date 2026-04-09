@@ -22,7 +22,7 @@ pipeline {
                 branch 'main'
             }
             steps {
-                bat 'echo Deploying to PRODUCTION environment...'
+                bat 'echo Deploying to PRODUCTION environmenttt...'
             }
         }
     }
